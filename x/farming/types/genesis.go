@@ -1,17 +1,24 @@
 package types
 
 import (
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewGenesisState returns new GenesisState.
-func NewGenesisState(params Params, planRecords []PlanRecord, stakings []Staking, rewards []Reward) *GenesisState {
+func NewGenesisState(params Params, planRecords []PlanRecord, globalPlanId uint64, globalLastEpochTime time.Time,
+	stakings []Staking, rewards []Reward, totalStakingReserveCoins, totalRewardsReserveCoins sdk.Coins) *GenesisState {
 	return &GenesisState{
-		Params:      params,
-		PlanRecords: planRecords,
-		Stakings:    stakings,
-		Rewards:     rewards,
+		Params:                   params,
+		PlanRecords:              planRecords,
+		GlobalPlanId:             globalPlanId,
+		GlobalLastEpochTime:      globalLastEpochTime,
+		Stakings:                 stakings,
+		Rewards:                  rewards,
+		TotalStakingReserveCoins: totalStakingReserveCoins,
+		TotalRewardsReserveCoins: totalRewardsReserveCoins,
 	}
 }
 
@@ -20,8 +27,12 @@ func DefaultGenesisState() *GenesisState {
 	return NewGenesisState(
 		DefaultParams(),
 		[]PlanRecord{},
+		0,
+		time.Time{},
 		[]Staking{},
 		[]Reward{},
+		nil,
+		nil,
 	)
 }
 
@@ -45,6 +56,12 @@ func ValidateGenesis(data GenesisState) error {
 			return err
 		}
 	}
+	if err := data.TotalStakingReserveCoins.Validate(); err != nil {
+		return err
+	}
+	if err := data.TotalRewardsReserveCoins.Validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -53,12 +70,7 @@ func (r PlanRecord) Validate() error {
 	if err := r.FarmingPoolCoins.Validate(); err != nil {
 		return err
 	}
-	if err := r.RewardPoolCoins.Validate(); err != nil {
-		return err
-	}
-	if err := r.StakingReserveCoins.Validate(); err != nil {
-		return err
-	}
+
 	return nil
 }
 

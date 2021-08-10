@@ -44,22 +44,24 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	// TODO: unimplemented
 	var planRecords []types.PlanRecord
 
-	//plans := k.GetAllPlans(ctx)
-	//stakings := k.GetAllStakings(ctx)
-	//rewards := k.GetAllRewards(ctx)
+	plans := k.GetAllPlans(ctx)
+	stakings := k.GetAllStakings(ctx)
+	rewards := k.GetAllRewards(ctx)
 
-	//for _, plan := range plans {
-	//	record, found := k.GetPlanRecord(ctx, plan)
-	//	if found {
-	//		planRecords = append(planRecords, record)
-	//	}
-	//}
-	//
-	//if len(planRecords) == 0 {
-	//	planRecords = []types.PlanRecord{}
-	//}
+	for _, plan := range plans {
+		record, found := k.GetPlanRecord(ctx, plan)
+		if found {
+			planRecords = append(planRecords, record)
+		}
+	}
 
-	return types.NewGenesisState(params, planRecords, nil, nil)
+	if len(planRecords) == 0 {
+		planRecords = []types.PlanRecord{}
+	}
+
+	lastEpochTime, _ := k.GetLastEpochTime(ctx)
+
+	return types.NewGenesisState(params, planRecords, k.GetGlobalPlanId(ctx), lastEpochTime, nil, nil)
 }
 
 // ValidateGenesis validates the farming module's genesis state.

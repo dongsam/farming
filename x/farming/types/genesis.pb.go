@@ -5,9 +5,9 @@ package types
 
 import (
 	fmt "fmt"
-	types "github.com/cosmos/cosmos-sdk/codec/types"
+	types1 "github.com/cosmos/cosmos-sdk/codec/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	types1 "github.com/cosmos/cosmos-sdk/types"
+	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
@@ -37,10 +37,20 @@ type GenesisState struct {
 	Params Params `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
 	// plan_records defines the plan records used for genesis state
 	PlanRecords []PlanRecord `protobuf:"bytes,2,rep,name=plan_records,json=planRecords,proto3" json:"plan_records" yaml:"plan_records"`
+	// global_plan_id defines the latest plan id
+	GlobalPlanId uint64 `protobuf:"varint,3,opt,name=global_plan_id,json=globalPlanId,proto3" json:"global_plan_id,omitempty" yaml:"global_plan_id"`
+	// global_last_epoch_time defines the latest epoch executed time for the plans
+	GlobalLastEpochTime time.Time `protobuf:"bytes,4,opt,name=global_last_epoch_time,json=globalLastEpochTime,proto3,stdtime" json:"global_last_epoch_time" yaml:"global_last_epoch_time"`
 	// stakings defines the staking records used for genesis state
-	Stakings []Staking `protobuf:"bytes,3,rep,name=stakings,proto3" json:"stakings"`
+	Stakings []Staking `protobuf:"bytes,5,rep,name=stakings,proto3" json:"stakings"`
 	// rewards defines the reward records used for genesis state
-	Rewards []Reward `protobuf:"bytes,4,rep,name=rewards,proto3" json:"rewards"`
+	Rewards []Reward `protobuf:"bytes,6,rep,name=rewards,proto3" json:"rewards"`
+	// staking_reserve_coins specifies balance of the staking reserve pool staked
+	// in all of the plans, this record is needed for import/export validation
+	TotalStakingReserveCoins github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,7,rep,name=total_staking_reserve_coins,json=totalStakingReserveCoins,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"total_staking_reserve_coins" yaml:"total_staking_reserve_coins"`
+	// total_rewards_reserve_coins specifies balance of the reward pool to be distributed in
+	// all of the plans, this record is needed for import/export validation
+	TotalRewardsReserveCoins github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,8,rep,name=total_rewards_reserve_coins,json=totalRewardsReserveCoins,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"total_rewards_reserve_coins" yaml:"total_rewards_reserve_coins"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -79,18 +89,15 @@ var xxx_messageInfo_GenesisState proto.InternalMessageInfo
 // PlanRecord is used for import/export via genesis json.
 type PlanRecord struct {
 	// plan specifies the plan interface; it can be FixedAmountPlan or RatioPlan
-	Plan types.Any `protobuf:"bytes,1,opt,name=plan,proto3" json:"plan"`
-	// last_epoch_time specifies the last distributed epoch time of the plan
-	LastEpochTime time.Time `protobuf:"bytes,2,opt,name=last_epoch_time,json=lastEpochTime,proto3,stdtime" json:"last_epoch_time" yaml:"last_epoch_time"`
+	Plan types1.Any `protobuf:"bytes,1,opt,name=plan,proto3" json:"plan"`
+	// last_distributed_time specifies the last distributed epoch time of the plan
+	LastDistributedTime time.Time `protobuf:"bytes,2,opt,name=last_distributed_time,json=lastDistributedTime,proto3,stdtime" json:"last_distributed_time" yaml:"last_distributed_time"`
+	// total_distributed_reserve_coins specifies the accumulated amount of the has distributed in the plans, this record
+	// is needed for import/export validation
+	TotalDistributedReserveCoins github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,3,rep,name=total_distributed_reserve_coins,json=totalDistributedReserveCoins,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"total_distributed_reserve_coins" yaml:"total_distributed_reserve_coins"`
 	// farming_pool_coins specifies balance of the farming pool for the plan
 	// this param is needed for import/export validation
-	FarmingPoolCoins github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,3,rep,name=farming_pool_coins,json=farmingPoolCoins,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"farming_pool_coins" yaml:"farming_pool_coins"`
-	// reward_pool_coins specifies balance of the reward pool to be distributed in
-	// the plan this param is needed for import/export validation
-	RewardPoolCoins github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,4,rep,name=reward_pool_coins,json=rewardPoolCoins,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"reward_pool_coins" yaml:"reward_pool_coins"`
-	// staking_reserve_coins specifies balance of the staking reserve pool staked
-	// in the plan this param is needed for import/export validation
-	StakingReserveCoins github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,5,rep,name=staking_reserve_coins,json=stakingReserveCoins,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"staking_reserve_coins" yaml:"staking_reserve_coins"`
+	FarmingPoolCoins github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,4,rep,name=farming_pool_coins,json=farmingPoolCoins,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"farming_pool_coins" yaml:"farming_pool_coins"`
 }
 
 func (m *PlanRecord) Reset()         { *m = PlanRecord{} }
@@ -136,44 +143,51 @@ func init() {
 }
 
 var fileDescriptor_c67612b66bcd2967 = []byte{
-	// 580 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0x31, 0x6f, 0xd3, 0x40,
-	0x14, 0xc7, 0xed, 0x34, 0x94, 0xea, 0x52, 0x54, 0x70, 0x4b, 0x95, 0x04, 0x64, 0x57, 0x9e, 0xb2,
-	0xd4, 0x56, 0xcb, 0x56, 0x21, 0xa4, 0x06, 0x21, 0x06, 0x40, 0x8a, 0x5c, 0x26, 0x16, 0xeb, 0x9c,
-	0x5c, 0x5c, 0xab, 0xf6, 0x9d, 0xe5, 0xbb, 0x16, 0xf2, 0x0d, 0x18, 0x2b, 0x21, 0xb1, 0xd2, 0x11,
-	0xf1, 0x1d, 0xd8, 0x3b, 0x76, 0x64, 0x6a, 0x51, 0xb2, 0x30, 0xf3, 0x05, 0x40, 0x77, 0xf7, 0x9c,
-	0x44, 0x4d, 0xd2, 0xaa, 0x93, 0x2f, 0xef, 0xfe, 0xef, 0xff, 0x7e, 0xef, 0xdd, 0x53, 0x50, 0x4b,
-	0x10, 0xda, 0x23, 0x45, 0x96, 0x50, 0xe1, 0xf7, 0xb1, 0xfc, 0xc6, 0xfe, 0xc9, 0x4e, 0x44, 0x04,
-	0xde, 0xf1, 0x63, 0x42, 0x09, 0x4f, 0xb8, 0x97, 0x17, 0x4c, 0x30, 0x6b, 0xb3, 0xcb, 0x78, 0xc6,
-	0xb8, 0x07, 0x2a, 0x0f, 0x54, 0xcd, 0x46, 0xcc, 0x58, 0x9c, 0x12, 0x5f, 0xa9, 0xa2, 0xe3, 0xbe,
-	0x8f, 0xe9, 0x40, 0xa7, 0x34, 0x37, 0x62, 0x16, 0x33, 0x75, 0xf4, 0xe5, 0x09, 0xa2, 0x0d, 0x6d,
-	0x14, 0xea, 0x0b, 0x70, 0xd5, 0x57, 0xb6, 0xfe, 0xe5, 0x47, 0x98, 0x93, 0x31, 0x46, 0x97, 0x25,
-	0x14, 0xee, 0x6f, 0xa2, 0x2d, 0xb9, 0xb4, 0xd2, 0xb9, 0x4e, 0x25, 0x92, 0x8c, 0x70, 0x81, 0xb3,
-	0x5c, 0x0b, 0xdc, 0x9f, 0x15, 0xb4, 0xfa, 0x5a, 0x37, 0x78, 0x20, 0xb0, 0x20, 0xd6, 0x73, 0xb4,
-	0x9c, 0xe3, 0x02, 0x67, 0xbc, 0x6e, 0x6e, 0x99, 0xad, 0xda, 0xae, 0xed, 0xcd, 0x6f, 0xd8, 0xeb,
-	0x28, 0x55, 0xbb, 0x7a, 0x7e, 0xe9, 0x18, 0x01, 0xe4, 0x58, 0x11, 0x5a, 0xcd, 0x53, 0x4c, 0xc3,
-	0x82, 0x74, 0x59, 0xd1, 0xe3, 0xf5, 0xca, 0xd6, 0x52, 0xab, 0xb6, 0xeb, 0x2e, 0xf4, 0x48, 0x31,
-	0x0d, 0x94, 0xb4, 0xfd, 0x44, 0xfa, 0xfc, 0xbd, 0x74, 0xd6, 0x07, 0x38, 0x4b, 0xf7, 0xdc, 0x69,
-	0x17, 0x37, 0xa8, 0xe5, 0x63, 0x21, 0xb7, 0xf6, 0xd1, 0x0a, 0x17, 0xf8, 0x28, 0xa1, 0x31, 0xaf,
-	0x2f, 0x29, 0x7f, 0x67, 0x91, 0xff, 0x81, 0xd6, 0x01, 0xe4, 0x38, 0xcd, 0x7a, 0x81, 0xee, 0x17,
-	0xe4, 0x23, 0x96, 0x84, 0x55, 0xe5, 0xb0, 0xb0, 0xcb, 0x40, 0xc9, 0xc0, 0xa0, 0x4c, 0xda, 0x5b,
-	0xf9, 0x7c, 0xe6, 0x18, 0x7f, 0xce, 0x1c, 0xc3, 0xfd, 0x57, 0x45, 0x68, 0xd2, 0x85, 0xe5, 0xa1,
-	0xaa, 0x44, 0x85, 0xd9, 0x6d, 0x78, 0x7a, 0xfc, 0x5e, 0x39, 0x7e, 0x6f, 0x9f, 0x0e, 0xc0, 0x4b,
-	0xe9, 0xac, 0x3e, 0x5a, 0x4b, 0x31, 0x17, 0x21, 0xc9, 0x59, 0xf7, 0x30, 0x94, 0x8f, 0x53, 0xaf,
-	0xa8, 0xd4, 0xe6, 0x4c, 0xea, 0xfb, 0xf2, 0xe5, 0xda, 0x2e, 0x8c, 0x6a, 0x53, 0x8f, 0xea, 0x9a,
-	0x81, 0x7b, 0x7a, 0xe5, 0x98, 0xc1, 0x03, 0x19, 0x7d, 0x25, 0x83, 0x32, 0xcf, 0xfa, 0x6a, 0x22,
-	0x0b, 0x5a, 0x0b, 0x73, 0xc6, 0xd2, 0x50, 0x6e, 0x53, 0x39, 0xbe, 0x46, 0xd9, 0xbc, 0xdc, 0xb7,
-	0x71, 0xe7, 0x2f, 0x59, 0x42, 0xdb, 0xef, 0xa0, 0x54, 0x43, 0x97, 0x9a, 0xb5, 0x70, 0x7f, 0x5c,
-	0x39, 0xad, 0x38, 0x11, 0x87, 0xc7, 0x91, 0xd7, 0x65, 0x19, 0xec, 0x31, 0x7c, 0xb6, 0x79, 0xef,
-	0xc8, 0x17, 0x83, 0x9c, 0x70, 0xe5, 0xc6, 0x83, 0x87, 0x60, 0xd0, 0x61, 0x2c, 0x55, 0x11, 0xeb,
-	0x8b, 0x89, 0x1e, 0xe9, 0xa9, 0x4e, 0x73, 0x55, 0x6f, 0xe3, 0x7a, 0x0b, 0x5c, 0x75, 0xcd, 0x35,
-	0xe3, 0x70, 0x37, 0xac, 0x35, 0x9d, 0x3f, 0xa1, 0xfa, 0x66, 0xa2, 0xc7, 0xb0, 0x2c, 0x61, 0x41,
-	0x38, 0x29, 0x4e, 0x08, 0x90, 0xdd, 0xbb, 0x8d, 0xac, 0x03, 0x64, 0x4f, 0x35, 0xd9, 0x5c, 0x97,
-	0xbb, 0xd1, 0xad, 0x83, 0x47, 0xa0, 0x2d, 0x54, 0x70, 0xb2, 0x81, 0xed, 0x37, 0xdf, 0x87, 0xb6,
-	0x79, 0x3e, 0xb4, 0xcd, 0x8b, 0xa1, 0x6d, 0xfe, 0x1e, 0xda, 0xe6, 0xe9, 0xc8, 0x36, 0x2e, 0x46,
-	0xb6, 0xf1, 0x6b, 0x64, 0x1b, 0x1f, 0xb6, 0xa7, 0xca, 0xcc, 0xf9, 0xd7, 0xf8, 0x34, 0x3e, 0xa9,
-	0x8a, 0xd1, 0xb2, 0x5a, 0xb7, 0x67, 0xff, 0x03, 0x00, 0x00, 0xff, 0xff, 0x60, 0x99, 0x36, 0x07,
-	0x10, 0x05, 0x00, 0x00,
+	// 690 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0x3f, 0x4f, 0xdb, 0x40,
+	0x18, 0xc6, 0x63, 0x48, 0x03, 0x3a, 0x50, 0x55, 0x99, 0x3f, 0x72, 0x80, 0xda, 0xc8, 0x43, 0x95,
+	0x0e, 0xd8, 0x82, 0x6e, 0xa8, 0x6a, 0x85, 0xdb, 0xaa, 0xaa, 0xda, 0x4a, 0xc8, 0x54, 0x1d, 0x58,
+	0xac, 0x73, 0x7c, 0x18, 0x0b, 0xdb, 0x67, 0xf9, 0x0e, 0x4a, 0xfa, 0x09, 0x3a, 0x32, 0x55, 0x1d,
+	0x19, 0xab, 0x4e, 0xfd, 0x00, 0xfd, 0x00, 0x8c, 0x8c, 0x9d, 0x00, 0x85, 0xa5, 0x33, 0x9f, 0xa0,
+	0xf2, 0xdd, 0x9b, 0xe0, 0x84, 0x84, 0x08, 0x26, 0x3b, 0x7e, 0x9f, 0xfb, 0xdd, 0x73, 0x8f, 0x1f,
+	0x07, 0x35, 0x38, 0x49, 0x03, 0x92, 0x27, 0x51, 0xca, 0xed, 0x1d, 0x5c, 0x5c, 0x43, 0xfb, 0x60,
+	0xd5, 0x27, 0x1c, 0xaf, 0xda, 0x21, 0x49, 0x09, 0x8b, 0x98, 0x95, 0xe5, 0x94, 0x53, 0x75, 0xbe,
+	0x49, 0x59, 0x42, 0x99, 0x05, 0x2a, 0x0b, 0x54, 0x0b, 0xf5, 0x90, 0xd2, 0x30, 0x26, 0xb6, 0x50,
+	0xf9, 0xfb, 0x3b, 0x36, 0x4e, 0x5b, 0x72, 0xc9, 0xc2, 0x6c, 0x48, 0x43, 0x2a, 0x6e, 0xed, 0xe2,
+	0x0e, 0x9e, 0xd6, 0x25, 0xc8, 0x93, 0x03, 0xa0, 0xca, 0x91, 0x2e, 0x7f, 0xd9, 0x3e, 0x66, 0xa4,
+	0x6b, 0xa3, 0x49, 0xa3, 0x14, 0xe6, 0xb7, 0xb9, 0xed, 0xf8, 0x92, 0x4a, 0xa3, 0xdf, 0x15, 0x8f,
+	0x12, 0xc2, 0x38, 0x4e, 0x32, 0x29, 0x30, 0x2f, 0x6a, 0x68, 0xfa, 0xad, 0x3c, 0xe0, 0x16, 0xc7,
+	0x9c, 0xa8, 0xcf, 0x51, 0x2d, 0xc3, 0x39, 0x4e, 0x98, 0xa6, 0x2c, 0x2b, 0x8d, 0xa9, 0x35, 0xdd,
+	0x1a, 0x7c, 0x60, 0x6b, 0x53, 0xa8, 0x9c, 0xea, 0xc9, 0x99, 0x51, 0x71, 0x61, 0x8d, 0xea, 0xa3,
+	0xe9, 0x2c, 0xc6, 0xa9, 0x97, 0x93, 0x26, 0xcd, 0x03, 0xa6, 0x8d, 0x2d, 0x8f, 0x37, 0xa6, 0xd6,
+	0xcc, 0xa1, 0x8c, 0x18, 0xa7, 0xae, 0x90, 0x3a, 0x8b, 0x05, 0xe7, 0xea, 0xcc, 0x98, 0x69, 0xe1,
+	0x24, 0x5e, 0x37, 0xcb, 0x14, 0xd3, 0x9d, 0xca, 0xba, 0x42, 0xa6, 0xbe, 0x44, 0x0f, 0xc3, 0x98,
+	0xfa, 0x38, 0xf6, 0x84, 0x28, 0x0a, 0xb4, 0xf1, 0x65, 0xa5, 0x51, 0x75, 0xea, 0x57, 0x67, 0xc6,
+	0x9c, 0x5c, 0xdd, 0x3b, 0x37, 0xdd, 0x69, 0xf9, 0xa0, 0xd8, 0xee, 0x5d, 0xa0, 0x7e, 0x45, 0xf3,
+	0x20, 0x88, 0x31, 0xe3, 0x1e, 0xc9, 0x68, 0x73, 0xd7, 0x2b, 0x82, 0xd1, 0xaa, 0xe2, 0xc8, 0x0b,
+	0x96, 0x4c, 0xcd, 0xea, 0xa4, 0x66, 0x7d, 0xea, 0xa4, 0xe6, 0x3c, 0x05, 0x9b, 0x8f, 0x7b, 0x36,
+	0xea, 0xe3, 0x98, 0x47, 0xe7, 0x86, 0xe2, 0xce, 0xc8, 0xe1, 0x07, 0xcc, 0xf8, 0x9b, 0x62, 0x54,
+	0x40, 0xd4, 0x0d, 0x34, 0xc9, 0x38, 0xde, 0x8b, 0xd2, 0x90, 0x69, 0x0f, 0x44, 0x38, 0xc6, 0xb0,
+	0x70, 0xb6, 0xa4, 0x0e, 0x12, 0xee, 0x2e, 0x53, 0x5f, 0xa0, 0x89, 0x9c, 0x7c, 0xc1, 0x45, 0xbc,
+	0x35, 0x41, 0x18, 0xfa, 0x8a, 0x5c, 0x21, 0x03, 0x40, 0x67, 0x91, 0xfa, 0x5b, 0x41, 0x8b, 0x9c,
+	0x72, 0x1c, 0x7b, 0x80, 0xf4, 0x72, 0xc2, 0x48, 0x7e, 0x40, 0xbc, 0xa2, 0x62, 0x4c, 0x9b, 0x10,
+	0xd0, 0x7a, 0x07, 0x5a, 0x94, 0xb0, 0x4b, 0x7c, 0x45, 0xa3, 0xd4, 0xf9, 0x0c, 0x19, 0x98, 0x32,
+	0x83, 0x5b, 0x58, 0xe6, 0xaf, 0x73, 0xa3, 0x11, 0x46, 0x7c, 0x77, 0xdf, 0xb7, 0x9a, 0x34, 0x81,
+	0x96, 0xc3, 0x65, 0x85, 0x05, 0x7b, 0x36, 0x6f, 0x65, 0x84, 0x09, 0x2c, 0x73, 0x35, 0x41, 0x82,
+	0x63, 0xbb, 0x92, 0x23, 0x26, 0x25, 0xcb, 0x70, 0x88, 0x3e, 0xcb, 0x93, 0xf7, 0xb2, 0x3c, 0x90,
+	0x75, 0x1f, 0xcb, 0x32, 0x67, 0x56, 0xb6, 0xbc, 0x3e, 0xf9, 0xed, 0xd8, 0xa8, 0xfc, 0x3b, 0x36,
+	0x2a, 0xe6, 0x8f, 0x2a, 0x42, 0xd7, 0x45, 0x57, 0x2d, 0x54, 0x2d, 0x7a, 0x09, 0x9f, 0xd7, 0xec,
+	0x8d, 0xae, 0x6d, 0xa4, 0x2d, 0x78, 0x63, 0x42, 0xa7, 0x1e, 0xa2, 0x39, 0x51, 0xaf, 0x20, 0x62,
+	0x3c, 0x8f, 0xfc, 0x7d, 0x4e, 0x02, 0x59, 0xd6, 0xb1, 0x91, 0x65, 0x6d, 0xc0, 0xa9, 0x97, 0xe4,
+	0xa9, 0x07, 0x62, 0xa0, 0xab, 0xc5, 0xec, 0xf5, 0xf5, 0x48, 0x74, 0xf5, 0x8f, 0x82, 0x0c, 0x99,
+	0x54, 0x79, 0x51, 0x6f, 0xf2, 0xe3, 0xa3, 0x92, 0xdf, 0x06, 0x0f, 0x4f, 0xca, 0xc9, 0x0f, 0xe5,
+	0xdd, 0x2d, 0xfd, 0x25, 0x41, 0x2b, 0xd9, 0xee, 0x29, 0xcd, 0x77, 0x05, 0xa9, 0xf0, 0x45, 0x78,
+	0x19, 0xa5, 0x31, 0x38, 0xae, 0x8e, 0x72, 0xfc, 0x11, 0x1c, 0xd7, 0xa5, 0xe3, 0x9b, 0x88, 0xbb,
+	0x99, 0x7c, 0x04, 0x80, 0x4d, 0x4a, 0xe3, 0xbe, 0x6a, 0x38, 0xef, 0x7f, 0xb6, 0x75, 0xe5, 0xa4,
+	0xad, 0x2b, 0xa7, 0x6d, 0x5d, 0xb9, 0x68, 0xeb, 0xca, 0xd1, 0xa5, 0x5e, 0x39, 0xbd, 0xd4, 0x2b,
+	0x7f, 0x2f, 0xf5, 0xca, 0xf6, 0x4a, 0x69, 0x8f, 0x01, 0xff, 0xf8, 0x87, 0xdd, 0x3b, 0xb1, 0x9d,
+	0x5f, 0x13, 0x0d, 0x78, 0xf6, 0x3f, 0x00, 0x00, 0xff, 0xff, 0x12, 0x2b, 0xdd, 0x4d, 0xcc, 0x06,
+	0x00, 0x00,
 }
 
 func (m *GenesisState) Marshal() (dAtA []byte, err error) {
@@ -196,6 +210,34 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.TotalRewardsReserveCoins) > 0 {
+		for iNdEx := len(m.TotalRewardsReserveCoins) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.TotalRewardsReserveCoins[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if len(m.TotalStakingReserveCoins) > 0 {
+		for iNdEx := len(m.TotalStakingReserveCoins) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.TotalStakingReserveCoins[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x3a
+		}
+	}
 	if len(m.Rewards) > 0 {
 		for iNdEx := len(m.Rewards) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -207,7 +249,7 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintGenesis(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x22
+			dAtA[i] = 0x32
 		}
 	}
 	if len(m.Stakings) > 0 {
@@ -221,8 +263,21 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintGenesis(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x2a
 		}
+	}
+	n1, err1 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.GlobalLastEpochTime, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.GlobalLastEpochTime):])
+	if err1 != nil {
+		return 0, err1
+	}
+	i -= n1
+	i = encodeVarintGenesis(dAtA, i, uint64(n1))
+	i--
+	dAtA[i] = 0x22
+	if m.GlobalPlanId != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.GlobalPlanId))
+		i--
+		dAtA[i] = 0x18
 	}
 	if len(m.PlanRecords) > 0 {
 		for iNdEx := len(m.PlanRecords) - 1; iNdEx >= 0; iNdEx-- {
@@ -271,34 +326,6 @@ func (m *PlanRecord) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.StakingReserveCoins) > 0 {
-		for iNdEx := len(m.StakingReserveCoins) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.StakingReserveCoins[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenesis(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2a
-		}
-	}
-	if len(m.RewardPoolCoins) > 0 {
-		for iNdEx := len(m.RewardPoolCoins) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.RewardPoolCoins[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenesis(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x22
-		}
-	}
 	if len(m.FarmingPoolCoins) > 0 {
 		for iNdEx := len(m.FarmingPoolCoins) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -310,15 +337,29 @@ func (m *PlanRecord) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintGenesis(dAtA, i, uint64(size))
 			}
 			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.TotalDistributedReserveCoins) > 0 {
+		for iNdEx := len(m.TotalDistributedReserveCoins) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.TotalDistributedReserveCoins[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
 			dAtA[i] = 0x1a
 		}
 	}
-	n2, err2 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.LastEpochTime, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.LastEpochTime):])
-	if err2 != nil {
-		return 0, err2
+	n3, err3 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.LastDistributedTime, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.LastDistributedTime):])
+	if err3 != nil {
+		return 0, err3
 	}
-	i -= n2
-	i = encodeVarintGenesis(dAtA, i, uint64(n2))
+	i -= n3
+	i = encodeVarintGenesis(dAtA, i, uint64(n3))
 	i--
 	dAtA[i] = 0x12
 	{
@@ -359,6 +400,11 @@ func (m *GenesisState) Size() (n int) {
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
+	if m.GlobalPlanId != 0 {
+		n += 1 + sovGenesis(uint64(m.GlobalPlanId))
+	}
+	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.GlobalLastEpochTime)
+	n += 1 + l + sovGenesis(uint64(l))
 	if len(m.Stakings) > 0 {
 		for _, e := range m.Stakings {
 			l = e.Size()
@@ -367,6 +413,18 @@ func (m *GenesisState) Size() (n int) {
 	}
 	if len(m.Rewards) > 0 {
 		for _, e := range m.Rewards {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	if len(m.TotalStakingReserveCoins) > 0 {
+		for _, e := range m.TotalStakingReserveCoins {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	if len(m.TotalRewardsReserveCoins) > 0 {
+		for _, e := range m.TotalRewardsReserveCoins {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
@@ -382,22 +440,16 @@ func (m *PlanRecord) Size() (n int) {
 	_ = l
 	l = m.Plan.Size()
 	n += 1 + l + sovGenesis(uint64(l))
-	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.LastEpochTime)
+	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.LastDistributedTime)
 	n += 1 + l + sovGenesis(uint64(l))
+	if len(m.TotalDistributedReserveCoins) > 0 {
+		for _, e := range m.TotalDistributedReserveCoins {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
 	if len(m.FarmingPoolCoins) > 0 {
 		for _, e := range m.FarmingPoolCoins {
-			l = e.Size()
-			n += 1 + l + sovGenesis(uint64(l))
-		}
-	}
-	if len(m.RewardPoolCoins) > 0 {
-		for _, e := range m.RewardPoolCoins {
-			l = e.Size()
-			n += 1 + l + sovGenesis(uint64(l))
-		}
-	}
-	if len(m.StakingReserveCoins) > 0 {
-		for _, e := range m.StakingReserveCoins {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
@@ -508,6 +560,58 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GlobalPlanId", wireType)
+			}
+			m.GlobalPlanId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.GlobalPlanId |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GlobalLastEpochTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.GlobalLastEpochTime, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Stakings", wireType)
 			}
@@ -541,7 +645,7 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Rewards", wireType)
 			}
@@ -572,6 +676,74 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			}
 			m.Rewards = append(m.Rewards, Reward{})
 			if err := m.Rewards[len(m.Rewards)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalStakingReserveCoins", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TotalStakingReserveCoins = append(m.TotalStakingReserveCoins, types.Coin{})
+			if err := m.TotalStakingReserveCoins[len(m.TotalStakingReserveCoins)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalRewardsReserveCoins", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TotalRewardsReserveCoins = append(m.TotalRewardsReserveCoins, types.Coin{})
+			if err := m.TotalRewardsReserveCoins[len(m.TotalRewardsReserveCoins)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -660,7 +832,7 @@ func (m *PlanRecord) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastEpochTime", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LastDistributedTime", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -687,11 +859,45 @@ func (m *PlanRecord) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.LastEpochTime, dAtA[iNdEx:postIndex]); err != nil {
+			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.LastDistributedTime, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalDistributedReserveCoins", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TotalDistributedReserveCoins = append(m.TotalDistributedReserveCoins, types.Coin{})
+			if err := m.TotalDistributedReserveCoins[len(m.TotalDistributedReserveCoins)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FarmingPoolCoins", wireType)
 			}
@@ -720,76 +926,8 @@ func (m *PlanRecord) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.FarmingPoolCoins = append(m.FarmingPoolCoins, types1.Coin{})
+			m.FarmingPoolCoins = append(m.FarmingPoolCoins, types.Coin{})
 			if err := m.FarmingPoolCoins[len(m.FarmingPoolCoins)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RewardPoolCoins", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RewardPoolCoins = append(m.RewardPoolCoins, types1.Coin{})
-			if err := m.RewardPoolCoins[len(m.RewardPoolCoins)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StakingReserveCoins", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.StakingReserveCoins = append(m.StakingReserveCoins, types1.Coin{})
-			if err := m.StakingReserveCoins[len(m.StakingReserveCoins)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
